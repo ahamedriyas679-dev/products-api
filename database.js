@@ -1,7 +1,6 @@
 var sqlite3 = require('sqlite3').verbose()
-var md5 = require('md5')
 
-const DBSOURCE = "db.sqlite"
+const DBSOURCE = process.env.DB_SOURCE || "db.sqlite"
 
 
 let db = new sqlite3.Database(DBSOURCE, (err) => {
@@ -29,7 +28,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
             } else {
                 // Table just created, creating some rows
                 var insert = 'INSERT INTO products (productName, description, category, brand, expiredDate, manufacturedDate, batchNumber, unitPrice, quantity, createdDate) VALUES (?,?,?,?,?,?,?,?,?,?)'
-                db.run(insert, ["White Basmathi Rice", "White Basmathi Rice imported from Pakistan. High-quality rice with extra fragrance. Organically grown.", "Rice", "CIC", "2023.05.04", "2022.02.20", 324567, , 1020, 200, "2022.02.24"])
+                db.run(insert, ["White Basmathi Rice", "White Basmathi Rice imported from Pakistan. High-quality rice with extra fragrance. Organically grown.", "Rice", "CIC", "2023.05.04", "2022.02.20", 324567, 1020, 200, "2022.02.24"])
             }
         })
 
@@ -50,6 +49,20 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
 
             }
         })
+
+        db.run(`CREATE TABLE IF NOT EXISTS customer (
+            customerId INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            address TEXT,
+            email TEXT NOT NULL,
+            dateOfBirth TEXT,
+            gender TEXT,
+            age INTEGER,
+            cardHolderName TEXT,
+            cardNumber TEXT NOT NULL,
+            expiryDate TEXT,
+            timeStamp TEXT
+            )`)
 
 
 

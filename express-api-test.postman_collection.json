@@ -215,6 +215,57 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Register customer",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('returns 201 Created', function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"pm.test('includes generated customerId', function () {",
+							"    pm.expect(pm.response.json().customerId).to.be.a('number');",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"ahamed\",\n  \"email\": \"ahamed@example.com\",\n  \"cardNumber\": \"123456789123\"\n}",
+					"options": {
+					"raw": {
+						"language": "json"
+					}
+				}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/customer",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"customer"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"event": [

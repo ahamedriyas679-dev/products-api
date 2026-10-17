@@ -1,13 +1,10 @@
 var express = require("express")
 var app = express()
 var db = require("./database.js")
-var cron = require('node-cron');
-var bodyParser = require("body-parser");
-const { request, response } = require("express");
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 
-let HTTP_PORT = 8080
+const HTTP_PORT = Number(process.env.PORT) || 8080
 const cors = require('cors');
 app.use(cors({
     origin: '*'
@@ -15,10 +12,11 @@ app.use(cors({
 
 
 
-// Start server
-app.listen(HTTP_PORT, () => {
-    console.log("Server running on port %PORT%".replace("%PORT%", HTTP_PORT))
-});
+if (require.main === module) {
+    app.listen(HTTP_PORT, () => {
+        console.log("Server running on port %PORT%".replace("%PORT%", HTTP_PORT))
+    });
+}
 
 app.get("/api/products", (req, res, next) => {
     try {
@@ -61,17 +59,16 @@ app.get("/api/products/:id", (req, res, next) => {
 
 app.get("/api/products/quantity/:quantity", (req, res, next) => {
     try {
-        var row = "[]"
         var sql = "select * from products where quantity > ?"
         var params = [req.params.quantity]
-        db.get(sql, params, (err, row) => {
+        db.all(sql, params, (err, rows) => {
             if (err) {
                 res.status(400).json({ "error": err.message });
                 return;
             }
             res.json({
                 "message": "success",
-                "data": row
+                "data": rows
             })
         });
     } catch (E) {
@@ -81,10 +78,9 @@ app.get("/api/products/quantity/:quantity", (req, res, next) => {
 
 app.get("/api/products/unitPrice/:unitPrice", (req, res, next) => {
     try {
-        var row = "[]"
         var sql = "select * from products where unitPrice > ?"
         var params = [req.params.unitPrice]
-        db.get(sql, params, (err, row) => {
+        db.all(sql, params, (err, rows) => {
             if (err) {
                 res.status(400).json({ "error": err.message });
                 return;
@@ -92,7 +88,7 @@ app.get("/api/products/unitPrice/:unitPrice", (req, res, next) => {
                 res.json({
 
                     "message": "success",
-                    "data": row
+                    "data": rows
                 })
             }
 
@@ -166,7 +162,7 @@ app.put("/api/products/", (req, res, next) => {
         [productName, description, category, brand, expiredDate, manufacturedDate, batchNumber, unitPrice, quantity, createdDate, id],
         function (err, result) {
             if (err) {
-                res.status(400).json({ "error": res.message })
+                res.status(400).json({ "error": err.message })
                 return;
             }
             res.status(200).json({ updated: this.changes });
@@ -181,7 +177,7 @@ app.delete("/api/products/delete/:id", (req, res, next) => {
             req.params.id,
             function (err, result) {
                 if (err) {
-                    res.status(400).json({ "error": res.message })
+                    res.status(400).json({ "error": err.message })
                     return;
                 }
                 res.json({ "message": "deleted", rows: this.changes })
@@ -198,7 +194,7 @@ app.delete("/api/products/deleteAll/:id", (req, res, next) => {
             req.params.id,
             function (err, result) {
                 if (err) {
-                    res.status(400).json({ "error": res.message })
+                    res.status(400).json({ "error": err.message })
                     return;
                 }
                 res.json({ "message": "deleted", rows: this.changes })
@@ -266,6 +262,37 @@ app.post("/api/suppliers/", (req, res, next) => {
     }
 });
 
+app.post(["/api/customer", "/api/customers"], (req, res) => {
+    const { name, address, email, dateOfBirth, gender, age, cardHolderName, cardNumber, expiryDate, timeStamp } = req.body || {};
+    const normalizedName = typeof name === "string" ? name.trim() : "";
+    const normalizedEmail = typeof email === "string" ? email.trim() : "";
+    const normalizedCardNumber = cardNumber == null ? "" : String(cardNumber).trim();
+
+    if (!normalizedName || !normalizedEmail || !normalizedCardNumber) {
+        return res.status(400).json({ error: "Name, email, and card number are required." });
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+        return res.status(400).json({ error: "A valid email address is required." });
+    }
+
+    if (!/^\d{12}$/.test(normalizedCardNumber)) {
+        return res.status(400).json({ error: "Credit card number must contain exactly 12 digits." });
+    }
+
+    const sql = "INSERT INTO customer (name, address, email, dateOfBirth, gender, age, cardHolderName, cardNumber, expiryDate, timeStamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    db.run(sql, [normalizedName, address, normalizedEmail, dateOfBirth, gender, age, cardHolderName, normalizedCardNumber, expiryDate, timeStamp], function (err) {
+        if (err) {
+            return res.status(400).json({ error: err.message });
+        }
+
+        return res.status(201).json({
+            message: "Customer registered successfully.",
+            customerId: this.lastID
+        });
+    });
+});
+
 app.delete("/api/suppliers/deleteAll/:id", (req, res, next) => {
     try {
         db.run(
@@ -273,7 +300,7 @@ app.delete("/api/suppliers/deleteAll/:id", (req, res, next) => {
             req.params.id,
             function (err, result) {
                 if (err) {
-                    res.status(400).json({ "error": res.message })
+                    res.status(400).json({ "error": err.message })
                     return;
                 }
                 res.json({ "message": "deleted", rows: this.changes })
@@ -288,3 +315,11 @@ app.delete("/api/suppliers/deleteAll/:id", (req, res, next) => {
 app.get("/", (req, res, next) => {
     res.json({ "message": "University of Moratuwa" })
 });
+
+app.use((err, req, res, next) => {
+    const statusCode = err.status || err.statusCode || 500;
+    const message = statusCode === 400 ? "Invalid request body." : "Internal server error.";
+    res.status(statusCode).json({ error: message });
+});
+
+module.exports = app;

@@ -2,19 +2,14 @@
 
 # Prerequisites
 
-For Windows
-
-* Python 2.7 (for microsoft build tools)
-* Install Microsoft build tools (to build sqlite using node-gyp)
-  * Instructions here https://github.com/nodejs/node-gyp#on-windows
-  * Or install using npm (`npm install --global windows-build-tools`)
-* Node-gyp (`npm install --global node-gyp`)
+* Node.js 18 or later
+* npm
 
 # Usage
 
-* Run `npm install` to installl dependencies
-* Run `npm run start` to start the local server
-* Load `http://localhost:8000` to test the endpoint. It will display a json result `{"message":"University of Moratuwa"}`
+* Run `npm install` to install dependencies
+* Run `npm start` to start the local server
+* Load `http://localhost:8080` to test the endpoint. It displays `{"message":"University of Moratuwa"}`
 
 # API Endpoints
 
@@ -114,7 +109,7 @@ This example is using the `curl` command line
 
 
 ```bash
-curl -X "DELETE" http://localhost:8000/api/products/2
+curl -X "DELETE" http://localhost:8080/api/products/delete/2
 ```
 
 The result is:
